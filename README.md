@@ -225,21 +225,66 @@ Java线程的创建、销毁、和线程间的切换是一件比较耗费计算�
 #### 线程池的具体使用
 ##### 线程池的创建 ThreadPoolExecutor 对象， 或调用Executors的静态方法来创建线程池
 【强制】线程池不允许使用Executor去创建，弊端：
-    * FixedThreadPool 和 SingleThreadPool：允许请求队列长度为Integer.MAX_VALUE
-    * CachedThreadPool 和 ScheduleThreadPool：允许创建线程数量为Integer.MAX_VALUE
-    * ThreadPoolExecutor
-    * corePoolSize:核心线程池大小
-    * maximumPoolSize:最大线程池大小（队列满之后，再创建线程）
-    * keepAliveTime：线程空闲后，保持存活的时间
-    * TimeUnit：时间单位
-    * BlockingQueue<Runnable>:用来存储等待执行任务的队列
-        * ArrayBlockingQueue 先进先出
-        * LinkedBlockingQueue
-        * SynchronousQueue 不存储元素，但必须一出一进，吞吐量较大
-        * ProorityBlockingQueue 具有优先级的无限阻塞队列
-    * threadFactory:线程工厂
-    * RejectedExecutorHandler:拒绝策略
-        * AbortPolicy：默认，无法处理新任务时抛出异常
-        * CallerRunsPolicy:用调用者所在的线程来运行任务
-        * DiscardOldestPolicy：丢弃最老的请求，并尝试再次提交
-        * DiscardPolicy：不处理，直接丢弃
+* FixedThreadPool 和 SingleThreadPool：允许请求队列长度为Integer.MAX_VALUE
+* CachedThreadPool 和 ScheduleThreadPool：允许创建线程数量为Integer.MAX_VALUE
+##### 使用ThreadPoolExecutor  --- threadPool.Demo1.java
+* corePoolSize:核心线程池大小
+* maximumPoolSize:最大线程池大小（队列满之后，再创建线程）
+* keepAliveTime：线程空闲后，保持存活的时间
+* TimeUnit：时间单位
+* BlockingQueue<Runnable>:用来存储等待执行任务的队列
+    * ArrayBlockingQueue 先进先出
+    * LinkedBlockingQueue
+    * SynchronousQueue 不存储元素，但必须一出一进，吞吐量较大
+    * ProorityBlockingQueue 具有优先级的无限阻塞队列
+* threadFactory:线程工厂
+* RejectedExecutorHandler:拒绝策略
+    * AbortPolicy：默认，无法处理新任务时抛出异常
+    * CallerRunsPolicy:用调用者所在的线程来运行任务
+    * DiscardOldestPolicy：丢弃最老的请求，并尝试再次提交
+    * DiscardPolicy：不处理，直接丢弃
+
+##### 使用ScheduledThreadPoolExecutor
+【功能】实现了可延时执行异步任务和可周期执行异步任务的特有功能
+* 周期性：scheduleAtFixedRate(Runnable, initialDelay, period, TimeUnit)
+* 延期： schedule(Runnable, delay, TimeUnit)
+
+## 读写锁ReadWritLock接口
+提供readLock和wirterLock两种锁的操作机制
+* 读锁可以在没有写锁的时候被多个线程同时持有，写锁是独占的  
+互斥原则：
+* 读-读能共存
+* 读-写不能共存
+* 写-写不能共存
+#### ReentrantReadWriteLock拥有的特性
+##### 公平和非公平
+* 公平锁和非公平锁都维护一个等待队列
+* 公平锁：当有线程加入时直接放入队列，调用时直接去队列头调用（有序）
+* 非公平锁：非公平锁对那些新晋的线程有很大的优势，可能直接调用新晋线程而非从队列中调用（无序）
+##### 可重入
+* 可重入指当前线程可直接进入已经获取锁的同步块（不需要再去申请锁）
+##### 锁降级
+* 获取写锁-获取读锁-释放写锁   这是可以的
+* 读锁不能向写锁升级
+##### 锁获取的中断
+##### 支持Condition
+##### 监控
+
+
+## ForkJoinPool分支合并（Java7）
+【优势】可以充分利用多CPU优势（实现用少量线程完成大数量的任务）
+
+### 使用方法
+1. 创建ForkJoinPool实例
+2. 调用submit、invoke执行ForkJoinTask（抽象类）任务
+
+#### ForkJoinTask抽象子类
+1. RecursiveAction --- 无返回值--ForkJoinPoolTest1.java
+2. RecursiveTask   --- 有返回值--ForkJoinPoolTest2.java
+
+#### 举例 --- 
+程序将一个大任务拆分成多个小任务，并将任务交给ForkJoinPool来执行
+
+#### 分析
+1. 如果没有向构造函数中传入希望的线程数量，那么当前计算机可用的CPU数量会被设置为线程数量作为默认值
+2. 使用ForkJoinPool能够使用数量有限的线程来完成非常多的具有父子关系的任务
